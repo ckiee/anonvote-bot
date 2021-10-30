@@ -13,7 +13,7 @@ export default class AdminModule extends Module {
     @command()
     async ping(msg: Message) {
         const CODEBLOCK = "```";
-        const uname = await exec("uname -a");
+        const uname = await exec("uname -nompr");
         msg.reply(`Pong!
 ${CODEBLOCK}
 up for ${process.uptime()}sec on ${process.platform} ${process.arch}
