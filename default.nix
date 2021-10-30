@@ -8,10 +8,9 @@ let
   };
 
 in y2n.mkYarnPackage {
-  name = "sysyelper";
+  name = "anonvote-bot";
   src = ./.;
   packageJSON = ./package.json;
   yarnLock = ./yarn.lock;
-  yarnNix = ./yarn.nix;
   buildPhase = "yarn --offline run postinstall";
 }
