@@ -10,7 +10,7 @@ dotenv.config();
 const client = new CookiecordClient(
     {
         botAdmins: process.env.BOT_ADMINS?.split(","),
-        prefix: "ep!",
+        prefix: "ep ",
     },
     {
         intents: [
