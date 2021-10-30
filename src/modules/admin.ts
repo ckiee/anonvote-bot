@@ -1,11 +1,24 @@
 import CookiecordClient, { command, CommonInhibitors, Module } from "cookiecord";
 import { Message } from "discord.js";
-import { inspect } from "util";
+import { inspect, promisify } from "util";
 import { logger } from "../logger";
+import { exec as execCb } from "child_process";
+const exec = promisify(execCb);
 
 export default class AdminModule extends Module {
     constructor(client: CookiecordClient) {
         super(client);
+    }
+
+    @command()
+    async ping(msg: Message) {
+        const CODEBLOCK = "```";
+        const uname = await exec("uname -a");
+        msg.reply(`Pong!
+${CODEBLOCK}
+up for ${process.uptime()}sec on ${process.platform} ${process.arch}
+${uname.stdout}
+${CODEBLOCK}`);
     }
 
     @command({
