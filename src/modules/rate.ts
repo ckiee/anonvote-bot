@@ -109,7 +109,7 @@ export default class RateModule extends Module {
 
                         const header = new MessageButton({
                             disabled: true,
-                            label: `${cat.label} - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}`,
+                            label: cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}` : ""),
                             emoji: cat.emoji,
                             style: "PRIMARY",
                             customId: `header#_#${id}`
