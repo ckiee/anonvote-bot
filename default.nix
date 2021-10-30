@@ -1,4 +1,6 @@
-with (import <nixpkgs> { });
+{ pkgs }:
+
+with pkgs;
 
 let
   node = nodejs-16_x;
@@ -12,5 +14,6 @@ in y2n.mkYarnPackage {
   src = ./.;
   packageJSON = ./package.json;
   yarnLock = ./yarn.lock;
+  yarnNix = ./yarn.nix;
   buildPhase = "yarn --offline run postinstall";
 }
