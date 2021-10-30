@@ -1,20 +1,15 @@
 import CookiecordClient, { command, listener, Module } from "cookiecord";
-import { GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu } from "discord.js";
+import { GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu, MessageSelectOption } from "discord.js";
 import { logger } from "../logger";
 
 interface VoiceCategory {
     label: string;
     emoji: string;
+    enabled: boolean;
 }
 
-const voiceCategories: Collection<string, VoiceCategory> = new Collection([
-    ["pitch", { label: "Pitch (H1)", emoji: "🔥"} ],
-    ["resonance", { label: "Resonance (R1)", emoji: "💧" }],
-    ["weight", { label: "Vocal weight (ST)", emoji: "🌱" }],
-    ["cleanness", { label: "Cleanness (HNR)", emoji: "⚗️" }]
-]);
-
-type VoiceRatings = Collection<string, (Set<string>)[]>; // <keyof voiceCategories, [userId][4]>
+type VoiceRatings = Collection<string, (Set<string>)[]>; // <keyof VoiceCategories, [userId][4]>
+type VoiceCategories = Collection<string, VoiceCategory>;
 interface InteractionState {
     confirmAbort: boolean;
     ratings: VoiceRatings;
@@ -23,6 +18,8 @@ interface InteractionState {
     state: "SETUP" | "VOTING";
     showParticipants: boolean;
     showVotes: boolean;
+    categories: VoiceCategories;
+    hasVotedBefore: boolean; // we need to disable category selection if there's data
 };
 
 export default class RateModule extends Module {
@@ -74,6 +71,20 @@ export default class RateModule extends Module {
                             })
                         ]
                     }),
+
+                    new MessageActionRow({
+                        components: [
+                            new MessageSelectMenu({
+                                customId: "extraCategory",
+                                placeholder: "Select categories",
+                                options: state.categories.map((category, id) => ({default: category.enabled, emoji: category.emoji, label: category.label, value: id})),
+                                minValues: 1,
+                                maxValues: 4,
+                                disabled: state.hasVotedBefore
+                            })
+                        ]
+                    }),
+
                     new MessageActionRow({
                         components: [
                             new MessageButton({
@@ -98,9 +109,9 @@ export default class RateModule extends Module {
                     description: state.showParticipants ? participants : "Participants hidden."
                 }],
                 components: [
-                    ...voiceCategories.map((cat, id) => {
+                    ...state.categories.filter(cat => cat.enabled).map((cat, id) => {
                         const rating = state.ratings.get(id);
-                        if (!rating) throw new Error("invalid voiceCategories key");
+                        if (!rating) throw new Error("invalid categories key");
 
                         // Average the button presses
                         const picks: number[] = [];
@@ -152,7 +163,29 @@ export default class RateModule extends Module {
 
     @command()
     async rate(msg: Message): Promise<void> {
-        const ratings: VoiceRatings = new Collection([...voiceCategories.keys()]
+        const categories: VoiceCategories = new Collection([
+            ["pitch", { label: "Pitch (H1)", emoji: "🔥", enabled: true }],
+            ["resonance", { label: "Resonance (R1)", emoji: "💧", enabled: true} ],
+            ["weight", { label: "Vocal weight (ST)", emoji: "🌱", enabled: true} ],
+            ["clarity", { label: "Clarity (HNR)", emoji: "⚗️", enabled: false }],
+            ["twang",{"label":"Twang, none to a lot","emoji":"🦆","enabled":false}],
+            ["kndel",{"label":"Knödel, none to a lot","emoji":"🥟","enabled":false}],
+            ["closure",{"label":"Closure, pressed to breathy","emoji":"🛸","enabled":false}],
+            ["nasality",{"label":"Nasality, hyponasal to hypernasal","emoji":"🐽","enabled":false}],
+            ["vocal",{"label":"Vocal fry, none to a lot","emoji":"🍟","enabled":false}],
+            ["false",{"label":"False folds, constricted to retracted","emoji":"🐉","enabled":false}],
+            ["oropharynx",{"label":"Oropharynx (OPC), expanded to constricted","emoji":"🐱","enabled":false}],
+            ["mouth",{"label":"Mouth space (R2), large to small​","emoji":"🎺","enabled":false}],
+            ["strain",{"label":"Strain, low to high","emoji":"🧸","enabled":false}],
+            ["fullness",{"label":"Fullness (ST:R1), hollow to overfull","emoji":"🥥","enabled":false}],
+            ["intonation",{"label":"Intonation, masculine to feminine","emoji":"🎸","enabled":false}],
+            ["congruence",{"label":"Congruence, low to high","emoji":"🔷","enabled":false}],
+            ["consistency",{"label":"Consistency, low to high","emoji":"🍃","enabled":false}],
+            ["naturalness",{"label":"Naturalness, low to high","emoji":"🎍","enabled":false}],
+            ["perceived",{"label":"Perceived sex, male to female","emoji":"⚡","enabled":false}],
+        ]);
+
+        const ratings: VoiceRatings = new Collection([...categories.keys()]
             .map(key => ([key, Array(4).fill(0)
                 .map(_ => new Set())])));
         const state: InteractionState = {
@@ -162,7 +195,9 @@ export default class RateModule extends Module {
             participants: new Set(),
             showParticipants: true,
             showVotes: false,
-            state: "SETUP"
+            state: "SETUP",
+            categories,
+            hasVotedBefore: false
         };
 
         const reply = await msg.reply(this.makeMessage(state));
@@ -171,7 +206,7 @@ export default class RateModule extends Module {
 
     @listener({ event: "interactionCreate" })
     async buttonPress(intr: Interaction) {
-        if (!intr.isButton()) return;
+        if (!(intr.isButton() || intr.isSelectMenu())) return;
         const state = this.stateStore.get(intr.message.id);
         const err = async (reason: string) => {
             logger.error(reason);
@@ -205,8 +240,16 @@ export default class RateModule extends Module {
         } else if (intr.customId == "setSetup") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "SETUP";
+        } else if (intr.customId == "extraCategory" && intr.isSelectMenu()) {
+            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+            state.categories = state.categories.mapValues((category, id) => {
+                category.enabled = intr.values.includes(id);
+                return category;
+            });
+
         } else if (state.state == "VOTING" && intr.customId.includes("#_#")) {
             // no awaits in this block to avoid race conditions
+            state.hasVotedBefore = true;
             const [rawLevel, vType] = intr.customId.split("#_#");
             const level = parseInt(rawLevel, 10);
 
