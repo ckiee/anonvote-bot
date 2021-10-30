@@ -1,5 +1,5 @@
 import CookiecordClient, { command, listener, Module } from "cookiecord";
-import { GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection } from "discord.js";
+import { GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu } from "discord.js";
 import { logger } from "../logger";
 
 interface VoiceCategory {
@@ -15,7 +15,15 @@ const voiceCategories: Collection<string, VoiceCategory> = new Collection([
 ]);
 
 type VoiceRatings = Collection<string, (Set<string>)[]>; // <keyof voiceCategories, [userId][4]>
-type InteractionState = { confirmAbort: boolean, ratings: VoiceRatings, originatorId: string; };
+interface InteractionState {
+    confirmAbort: boolean;
+    ratings: VoiceRatings;
+    originatorId: string;
+    participants: Set<string>; // <uid>
+    state: "SETUP" | "VOTING";
+    showParticipants: boolean;
+    showVotes: boolean;
+};
 
 export default class RateModule extends Module {
     readonly redEmojis = [
@@ -33,55 +41,113 @@ export default class RateModule extends Module {
     stateStore: Collection<string, InteractionState> = new Collection(); // <messageId, ...>
 
     private makeMessage(state: InteractionState): MessagePayload | MessageOptions {
-        return {
-            content: "Rate voice",
-            components: [
-                ...voiceCategories.map((cat, id) => {
-                    const rating = state.ratings.get(id);
-                    if (!rating) throw new Error("invalid voiceCategories key");
-
-                    // Average the button presses
-                    const picks: number[] = [];
-                    rating.forEach((set, idx) => picks.push(...Array(set.size).fill(idx + 1)));
-                    const votedRating = picks.reduce((a, b) => a + b, 0) / picks.length;
-
-                    const header = new MessageButton({
-                        disabled: true,
-                        label: `${cat.label} - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}`,
-                        emoji: cat.emoji,
-                        style: "PRIMARY",
-                        customId: `header#_#${id}`
-                    });
-
-                    return new MessageActionRow({
+        const abortButton = new MessageButton({
+            label: state.confirmAbort ? "Confirm Abort" : "Abort",
+            customId: "abort",
+            emoji: "🗑️",
+            style: "DANGER"
+        });
+        if (state.state == "SETUP") {
+            return {
+                embeds: [{ title: "Welcome to eVoicepRivATE", description: "Pick some options below! 😄"}],
+                components: [
+                    new MessageActionRow({
                         components: [
-                            header,
-                            ...this.redEmojis.map((emoji, i) => {
-                                const btn = rating[i];
-                                const isVoted = Math.round(votedRating) == i + 1;
-                                return new MessageButton({
-                                    label: btn ? btn.size ? btn.size.toString() : "" : "",
-                                    emoji,
-                                    style: isVoted ? "SUCCESS" : "SECONDARY",
-                                    customId: `${i}#_#${id}`
-                                })
+                            new MessageButton({
+                                disabled: true,
+                                customId: "headerVisibOptions",
+                                style: "PRIMARY",
+                                emoji: "💼",
+                                label: "Visibility Options"
+                            }),
+                            new MessageButton({
+                                customId: "showVotes",
+                                style: state.showVotes ? "SUCCESS" : "DANGER",
+                                emoji: "🔢",
+                                label: "Show Votes"
+                            }),
+                            new MessageButton({
+                                customId: "showParticipants",
+                                style: state.showParticipants ? "SUCCESS" : "DANGER",
+                                emoji: "👭",
+                                label: "Show Participants"
                             })
                         ]
-                    });
-                }
-                ),
-                new MessageActionRow({
-                    components: [
-                        new MessageButton({
-                            label: state.confirmAbort ? "Confirm Abort" : "Abort",
-                            customId: "abort",
-                            emoji: "🗑️",
-                            style: "DANGER"
-                        }),
-                    ]
-                })
-            ]
-        };
+                    }),
+                    new MessageActionRow({
+                        components: [
+                            new MessageButton({
+                                customId: "setVoting",
+                                style: "PRIMARY",
+                                emoji: "🚀",
+                                label: "Start voting"
+                            }),
+                            abortButton
+                        ]
+                    })
+                ]
+            };
+        } else if (state.state == "VOTING") {
+            const participants = state.participants.size
+                ? `Participants (${state.participants.size}): ${[...state.participants].map(id => `<@${id}>`)}`
+                : "No participants yet.";
+
+            return {
+                embeds: [{
+                    title: "Rate voice",
+                    description: state.showParticipants ? participants : "Participants hidden."
+                }],
+                components: [
+                    ...voiceCategories.map((cat, id) => {
+                        const rating = state.ratings.get(id);
+                        if (!rating) throw new Error("invalid voiceCategories key");
+
+                        // Average the button presses
+                        const picks: number[] = [];
+                        rating.forEach((set, idx) => picks.push(...Array(set.size).fill(idx + 1)));
+                        const votedRating = picks.reduce((a, b) => a + b, 0) / picks.length;
+
+                        const header = new MessageButton({
+                            disabled: true,
+                            label: `${cat.label} - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}`,
+                            emoji: cat.emoji,
+                            style: "PRIMARY",
+                            customId: `header#_#${id}`
+                        });
+
+                        return new MessageActionRow({
+                            components: [
+                                header,
+                                ...this.redEmojis.map((emoji, i) => {
+                                    const btn = rating[i];
+                                    const isVoted = Math.round(votedRating) == i + 1;
+                                    return new MessageButton({
+                                        label: btn && state.showVotes ? btn.size ? btn.size.toString() : "" : "",
+                                        emoji,
+                                        style: isVoted ? "SUCCESS" : "SECONDARY",
+                                        customId: `${i}#_#${id}`
+                                    })
+                                })
+                            ]
+                        });
+                    }
+                    ),
+                    new MessageActionRow({
+                        components: [
+                            new MessageButton({
+                                customId: "setSetup",
+                                style: "PRIMARY",
+                                emoji: "⚙️",
+                                label: "Adjust settings"
+                            }),
+                            abortButton
+                        ]
+                    })
+                ]
+            };
+        } else {
+            return { content: `Unknown \`state.state\` ${JSON.stringify(state)}` };
+        }
     }
 
     @command()
@@ -89,7 +155,15 @@ export default class RateModule extends Module {
         const ratings: VoiceRatings = new Collection([...voiceCategories.keys()]
             .map(key => ([key, Array(4).fill(0)
                 .map(_ => new Set())])));
-        const state: InteractionState = { confirmAbort: false, ratings, originatorId: msg.author.id };
+        const state: InteractionState = {
+            confirmAbort: false,
+            ratings,
+            originatorId: msg.author.id,
+            participants: new Set(),
+            showParticipants: true,
+            showVotes: false,
+            state: "SETUP"
+        };
 
         const reply = await msg.reply(this.makeMessage(state));
         this.stateStore.set(reply.id, state);
@@ -119,7 +193,19 @@ export default class RateModule extends Module {
             } else {
                 state.confirmAbort = true;
             }
-        } else {
+        } else if (intr.customId == "showVotes") {
+            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+            state.showVotes = !state.showVotes;
+        } else if (intr.customId == "showParticipants") {
+            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+            state.showParticipants = !state.showParticipants;
+        } else if (intr.customId == "setVoting") {
+            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+            state.state = "VOTING";
+        } else if (intr.customId == "setSetup") {
+            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+            state.state = "SETUP";
+        } else if (state.state == "VOTING" && intr.customId.includes("#_#")) {
             // no awaits in this block to avoid race conditions
             const [rawLevel, vType] = intr.customId.split("#_#");
             const level = parseInt(rawLevel, 10);
@@ -127,12 +213,16 @@ export default class RateModule extends Module {
             const rating = state.ratings.get(vType);
             if (!rating) return err("missing rating in `state.ratings`");
 
+            state.participants.add(intrMemberId);
+
             if (rating[level].has(intr.user.id)) {
                 rating[level].delete(intr.user.id);
             } else {
                 rating.forEach(set => set.delete(intr.user.id));
                 rating[level].add(intr.user.id);
             }
+        } else {
+            return err(`unknown interaction customId ${intr.customId} in ${state.state}`);
         }
         await intr.update(this.makeMessage(state));
     }
