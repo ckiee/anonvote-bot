@@ -77,7 +77,7 @@ export default class RateModule extends Module {
                             new MessageSelectMenu({
                                 customId: "extraCategory",
                                 placeholder: "Select categories",
-                                options: state.categories.map((category, id) => ({default: category.enabled, emoji: category.emoji, label: category.label, value: id})),
+                                options: state.categories.map((category, id) => ({ default: category.enabled, emoji: category.emoji, label: category.label, value: id })),
                                 minValues: 1,
                                 maxValues: 4,
                                 disabled: state.hasVotedBefore
@@ -118,31 +118,32 @@ export default class RateModule extends Module {
                         rating.forEach((set, idx) => picks.push(...Array(set.size).fill(idx + 1)));
                         const votedRating = picks.reduce((a, b) => a + b, 0) / picks.length;
 
-                        const header = new MessageButton({
-                            disabled: true,
-                            label: cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}` : ""),
-                            emoji: cat.emoji,
-                            style: "PRIMARY",
-                            customId: `header#_#${id}`
-                        });
+                        const UNICODE_NUM_EMOJI_SUFFIX = "️⃣";
 
                         return new MessageActionRow({
                             components: [
-                                header,
-                                ...this.redEmojis.map((emoji, i) => {
-                                    const btn = rating[i];
-                                    const isVoted = Math.round(votedRating) == i + 1;
-                                    return new MessageButton({
-                                        label: btn && state.showVotes ? btn.size ? btn.size.toString() : "" : "",
-                                        emoji,
-                                        style: isVoted ? "SUCCESS" : "SECONDARY",
-                                        customId: `${i}#_#${id}`
-                                    })
+                                // new MessageButton({
+                                //     disabled: true,
+                                //     label: cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}` : ""),
+                                //     emoji: cat.emoji,
+                                //     style: "PRIMARY",
+                                //     customId: `header#_#${id}`
+                                // }),
+                                new MessageSelectMenu({
+                                    customId: `select#_#${id}`,
+                                    minValues: 1,
+                                    maxValues: 1,
+                                    options: Array(5).fill(0).map((_, i) => ({
+                                        value: i.toString(10),
+                                        emoji: (i + 1).toString(10) + UNICODE_NUM_EMOJI_SUFFIX,
+                                        label: `${"🔴".repeat(i + 1)}${state.showVotes ? ` (${rating[i].size} votes)` : ""}`,
+                                        default: false
+                                    })),
+                                    placeholder: cat.emoji + " " + cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}` : "")
                                 })
                             ]
                         });
-                    }
-                    ),
+                    }),
                     new MessageActionRow({
                         components: [
                             new MessageButton({
@@ -186,7 +187,7 @@ export default class RateModule extends Module {
         ]);
 
         const ratings: VoiceRatings = new Collection([...categories.keys()]
-            .map(key => ([key, Array(4).fill(0)
+            .map(key => ([key, Array(5).fill(0)
                 .map(_ => new Set())])));
         const state: InteractionState = {
             confirmAbort: false,
@@ -247,14 +248,16 @@ export default class RateModule extends Module {
                 return category;
             });
 
-        } else if (state.state == "VOTING" && intr.customId.includes("#_#")) {
+        } else if (state.state == "VOTING" && intr.customId.startsWith("select#_#") && intr.isSelectMenu()) {
             // no awaits in this block to avoid race conditions
             state.hasVotedBefore = true;
-            const [rawLevel, vType] = intr.customId.split("#_#");
-            const level = parseInt(rawLevel, 10);
+            const categoryId = intr.customId.split("#_#")[1];
+            if (intr.values.length <= 0) return;
+            const level = parseInt(intr.values[0], 10);
 
-            const rating = state.ratings.get(vType);
+            const rating = state.ratings.get(categoryId);
             if (!rating) return err("missing rating in `state.ratings`");
+            if (level >= rating.length) return err("couldn't derefrence `rating[level]`")
 
             state.participants.add(intrMemberId);
 
