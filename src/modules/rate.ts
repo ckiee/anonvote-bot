@@ -122,13 +122,6 @@ export default class RateModule extends Module {
 
                         return new MessageActionRow({
                             components: [
-                                // new MessageButton({
-                                //     disabled: true,
-                                //     label: cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}` : ""),
-                                //     emoji: cat.emoji,
-                                //     style: "PRIMARY",
-                                //     customId: `header#_#${id}`
-                                // }),
                                 new MessageSelectMenu({
                                     customId: `select#_#${id}`,
                                     minValues: 1,
@@ -238,9 +231,13 @@ export default class RateModule extends Module {
         } else if (intr.customId == "setVoting") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "VOTING";
+            // just incase they misclick, they can reset it by changing pages
+            state.confirmAbort = false;
         } else if (intr.customId == "setSetup") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "SETUP";
+            // see above
+            state.confirmAbort = false;
         } else if (intr.customId == "extraCategory" && intr.isSelectMenu()) {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.categories = state.categories.mapValues((category, id) => {
