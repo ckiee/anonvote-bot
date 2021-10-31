@@ -158,10 +158,10 @@ export default class RateModule extends Module {
     @command()
     async rate(msg: Message): Promise<void> {
         const categories: VoiceCategories = new Collection([
-            ["pitch", { label: "Pitch (H1)", emoji: "🔥", enabled: true }],
-            ["resonance", { label: "Resonance (R1)", emoji: "💧", enabled: true} ],
+            ["pitch", { label: "Pitch (H1), low to high", emoji: "🔥", enabled: true }],
+            ["resonance", { label: "Resonance (R1), dark to bright", emoji: "💧", enabled: true} ],
             ["weight", { label: "Vocal weight (ST), heavy to light", emoji: "🌱", enabled: true} ],
-            ["clarity", { label: "Clarity (HNR)", emoji: "⚗️", enabled: false }],
+            ["clarity", { label: "Clarity (HNR), rough to clean", emoji: "⚗️", enabled: false }],
             ["twang",{"label":"Twang, none to a lot","emoji":"🦆","enabled":false}],
             ["kndel",{"label":"Knödel, none to a lot","emoji":"🥟","enabled":false}],
             ["closure",{"label":"Closure, pressed to breathy","emoji":"🛸","enabled":false}],
