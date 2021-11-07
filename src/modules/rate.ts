@@ -23,14 +23,6 @@ interface InteractionState {
 };
 
 export default class RateModule extends Module {
-    readonly redEmojis = [
-        '<:r51:903738140546719744>',
-        '<:r102:903738140148269098>',
-        '<:r153:903738140479602728>',
-        '<:r204:903738140160831509>',
-        // '<:r255:903738140282462300>',
-    ];
-
     constructor(client: CookiecordClient) {
         super(client);
     }
