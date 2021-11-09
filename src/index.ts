@@ -1,4 +1,4 @@
-import CookiecordClient, { HelpModule } from "cookiecord";
+import CookiecordClient from "cookiecord";
 import { Intents } from "discord.js";
 import dotenv from "dotenv-safe";
 import AdminModule from "./modules/admin";
@@ -18,6 +18,7 @@ const client = new CookiecordClient(
             Intents.FLAGS.GUILD_MESSAGES,
             Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
         ],
+        allowedMentions: { parse: [ "users" ] }
     }
 );
 
