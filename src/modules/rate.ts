@@ -22,6 +22,13 @@ interface InteractionState {
     hasVotedBefore: boolean; // we need to disable category selection if there's data
 };
 
+function ratingToMoons(rating: number) {
+    return Array(5).fill(0)
+        .map((_, i) => Math.round(Math.max((rating - i) * 2, 0)) / 2)
+        .map(x => x != 0 ? x < 1 ? "🌗":  " 🌕" : " 🌑 " )
+        .join("");
+};
+
 export default class RateModule extends Module {
     constructor(client: CookiecordClient) {
         super(client);
@@ -38,7 +45,7 @@ export default class RateModule extends Module {
         });
         if (state.state == "SETUP") {
             return {
-                embeds: [{ title: "Welcome to eVoicepRivATE", description: "Pick some options below! 😄"}],
+                embeds: [{ title: "Welcome to eVoicepRivATE", description: "Pick some options below! 😄"} ],
                 components: [
                     new MessageActionRow({
                         components: [
@@ -118,13 +125,19 @@ export default class RateModule extends Module {
                                     customId: `select#_#${id}`,
                                     minValues: 1,
                                     maxValues: 1,
-                                    options: Array(5).fill(0).map((_, i) => ({
+                                    options: [...Array(5).fill(0).map((_, i) => ({
                                         value: i.toString(10),
                                         emoji: (i + 1).toString(10) + UNICODE_NUM_EMOJI_SUFFIX,
                                         label: `${"🔴".repeat(i + 1)}${state.showVotes ? ` (${rating[i].size} votes)` : ""}`,
                                         default: false
                                     })),
-                                    placeholder: cat.emoji + " " + cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : votedRating.toFixed(2)}` : "")
+                                    {
+                                        value: "total",
+                                        emoji: "📈",
+                                        label: `Total votes: ${rating.map(x => [...x].length).reduce((a, b) => a + b)}`,
+                                        default: false
+                                    }],
+                                    placeholder: cat.emoji + " " + cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : ratingToMoons(votedRating)}` : "")
                                 })
                             ]
                         });
@@ -242,19 +255,21 @@ export default class RateModule extends Module {
             state.hasVotedBefore = true;
             const categoryId = intr.customId.split("#_#")[1];
             if (intr.values.length <= 0) return;
-            const level = parseInt(intr.values[0], 10);
+            if (intr.values[0] != "total") {
+                const level = parseInt(intr.values[0], 10);
 
-            const rating = state.ratings.get(categoryId);
-            if (!rating) return err("missing rating in `state.ratings`");
-            if (level >= rating.length) return err("couldn't derefrence `rating[level]`")
+                const rating = state.ratings.get(categoryId);
+                if (!rating) return err("missing rating in `state.ratings`");
+                if (level >= rating.length) return err("couldn't derefrence `rating[level]`")
 
-            state.participants.add(intrMemberId);
+                state.participants.add(intrMemberId);
 
-            if (rating[level].has(intr.user.id)) {
-                rating[level].delete(intr.user.id);
-            } else {
-                rating.forEach(set => set.delete(intr.user.id));
-                rating[level].add(intr.user.id);
+                if (rating[level].has(intr.user.id)) {
+                    rating[level].delete(intr.user.id);
+                } else {
+                    rating.forEach(set => set.delete(intr.user.id));
+                    rating[level].add(intr.user.id);
+                }
             }
         } else {
             return err(`unknown interaction customId ${intr.customId} in ${state.state}`);
