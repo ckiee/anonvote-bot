@@ -1,5 +1,5 @@
 import CookiecordClient from "cookiecord";
-import { Intents } from "discord.js";
+import { Message, Intents } from "discord.js";
 import dotenv from "dotenv-safe";
 import AdminModule from "./modules/admin";
 import RateModule from "./modules/rate";
@@ -7,10 +7,17 @@ import RateModule from "./modules/rate";
 
 dotenv.config();
 
+// TODO replace this with a better solution in cookiecord
+const isUpper = (a: string) => a == a.toUpperCase();
+const caseInsensitivePrefix =
+    (prefix: string) => (msg: Message) => [...prefix]
+        .map(x => isUpper(msg.content.slice(0, prefix.length)) ? x.toUpperCase() : x.toLowerCase())
+        .join("");
+
 const client = new CookiecordClient(
     {
         botAdmins: process.env.BOT_ADMINS?.split(","),
-        prefix: "ep ",
+        prefix: caseInsensitivePrefix("ep "),
     },
     {
         intents: [
@@ -18,7 +25,7 @@ const client = new CookiecordClient(
             Intents.FLAGS.GUILD_MESSAGES,
             Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
         ],
-        allowedMentions: { parse: [ "users" ] }
+        allowedMentions: { parse: ["users"] }
     }
 );
 
