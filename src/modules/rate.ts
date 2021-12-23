@@ -20,6 +20,7 @@ interface InteractionState {
     showVotes: boolean;
     categories: VoiceCategories;
     hasVotedBefore: boolean; // we need to disable category selection if there's data
+    binaryVote: boolean;
 };
 
 function ratingToMoons(rating: number) {
@@ -67,6 +68,12 @@ export default class RateModule extends Module {
                                 style: state.showParticipants ? "SUCCESS" : "DANGER",
                                 emoji: "👭",
                                 label: "Show Participants"
+                            }),
+                            new MessageButton({
+                                customId: "binaryVote",
+                                style: state.binaryVote ? "SUCCESS" : "DANGER",
+                                emoji: "💡",
+                                label: "Binary vote"
                             })
                         ]
                     }),
@@ -125,18 +132,15 @@ export default class RateModule extends Module {
                                     customId: `select#_#${id}`,
                                     minValues: 1,
                                     maxValues: 1,
-                                    options: [...Array(5).fill(0).map((_, i) => ({
-                                        value: i.toString(10),
-                                        emoji: (i + 1).toString(10) + UNICODE_NUM_EMOJI_SUFFIX,
-                                        label: `${"🔴".repeat(i + 1)}${state.showVotes ? ` (${rating[i].size} votes)` : ""}`,
-                                        default: false
-                                    })),
-                                    {
-                                        value: "total",
-                                        emoji: "📈",
-                                        label: `Total votes: ${rating.map(x => [...x].length).reduce((a, b) => a + b)}`,
-                                        default: false
-                                    }],
+                                    options: [
+                                        ...!state.binaryVote ? Array(5).fill(0).map((_, i) => mkVotePoint(i)) : [mkVotePoint(0), mkVotePoint(4)],
+                                        ...(state.showVotes ? [{
+                                            value: "total",
+                                            emoji: "📈",
+                                            label: `Total votes: ${rating.map(x => [...x].length).reduce((a, b) => a + b)}`,
+                                            default: false
+                                        }] : [])
+                                    ],
                                     placeholder: cat.emoji + " " + cat.label + (state.showVotes ? ` - ${isNaN(votedRating) ? "?" : ratingToMoons(votedRating)}` : "")
                                 })
                             ]
@@ -196,7 +200,8 @@ export default class RateModule extends Module {
             showVotes: false,
             state: "SETUP",
             categories,
-            hasVotedBefore: false
+            hasVotedBefore: false,
+            binaryVote: false
         };
 
         const reply = await msg.reply(this.makeMessage(state));
@@ -219,7 +224,9 @@ export default class RateModule extends Module {
         const intrMemberId = intr.member instanceof GuildMember ? intr.member.id : intr.member?.user.id;
         if (!intrMemberId) return err("Could not fetch guild member");
 
-        if (intr.customId == "abort") {
+        if (intr.customId == "binaryVote") {
+            state.binaryVote = !state.binaryVote;
+        } else if (intr.customId == "abort") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             if (state.confirmAbort && intr.channel) {
                 await intrMsg.delete();
