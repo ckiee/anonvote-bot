@@ -126,6 +126,15 @@ export default class RateModule extends Module {
 
                         const UNICODE_NUM_EMOJI_SUFFIX = "️⃣";
 
+                        const mkVotePoint = (i: number) => (
+                            {
+                                value: i.toString(10),
+                                emoji: (i + 1).toString(10) + UNICODE_NUM_EMOJI_SUFFIX,
+                                label: `${"🔴".repeat(i + 1)}${state.showVotes ? ` (${rating[i].size} votes)` : ""}`,
+                                default: false
+                            }
+                        );
+
                         return new MessageActionRow({
                             components: [
                                 new MessageSelectMenu({
