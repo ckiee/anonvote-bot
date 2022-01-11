@@ -2,6 +2,7 @@ import CookiecordClient from "cookiecord";
 import { Message, Intents } from "discord.js";
 import dotenv from "dotenv-safe";
 import AdminModule from "./modules/admin";
+import QueueModule from "./modules/queue";
 import RateModule from "./modules/rate";
 
 
@@ -36,6 +37,7 @@ if (process.argv[0].endsWith("ts-node")) {
 } else {
     client.registerModule(AdminModule);
     client.registerModule(RateModule);
+    client.registerModule(QueueModule);
 }
 
 client.login(process.env.TOKEN);
