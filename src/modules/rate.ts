@@ -226,7 +226,7 @@ export default class RateModule extends Module {
             await intr.reply({ content: `:x: ${reason}`, ephemeral: true })
         }
 
-        if (state == undefined) return err("Message is too old");
+        if (state == undefined) return;
 
         const intrMsg = intr.message instanceof Message ? intr.message : await intr.channel?.messages.fetch(intr.message.id);
         if (!intrMsg) return err("Could not fetch interaction message, missing channel");
