@@ -122,3 +122,6 @@ result
 
 # emacs markdown-mode preview
 README.html
+
+# prod/dev envs
+.env.*
