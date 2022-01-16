@@ -3,10 +3,16 @@ import { Message, MessageEmbed, TextChannel } from "discord.js";
 
 const requisites: Inhibitor = async msg => (msg.guild && msg.channel.type == "GUILD_TEXT" && msg.channel.parent) ? undefined : "bad channel";
 
+interface QueueEntry {
+    userId: string;
+    joinTime: number;
+    turnsTaken: number;
+}
+
 interface ChannelEvent {
-    queue: string[]
-    currentUserId?: string
-    id: string
+    queue: QueueEntry[];
+    currentUserId?: string;
+    id: string;
 }
 
 export default class QueueModule extends Module {
@@ -31,11 +37,22 @@ export default class QueueModule extends Module {
         }
     }
 
+    private indexOfUserId(queue: QueueEntry[], id: string) {
+        return queue.map((q, i) => [q, i] as const).filter(([q]) => q.userId == id)[0][1];
+    }
+
+    private sortEventQueue(evt: ChannelEvent) {
+        // Sort over the amount of turns taken, and fallback to the join order
+        evt.queue = evt.queue
+            .sort((a, b) => b.joinTime - a.joinTime)
+            .sort((a, b) => b.turnsTaken - a.turnsTaken);
+    }
+
     private getStateEmbed(msg: Message): MessageEmbed {
         const evt = this.getEvent(msg);
-        const list = evt.queue.map(userId => {
-            const ifActive = (str: string) => evt.currentUserId == userId ? str : "";
-            return `${ifActive("**")}- <@${userId}>${ifActive(" (active) **")}`
+        const list = evt.queue.map(entry => {
+            const ifActive = (str: string) => evt.currentUserId == entry.userId ? str : "";
+            return `${ifActive("**")}- <@${entry.userId}>${ifActive(" (active) **")}`
         }).join("\n");
         return new MessageEmbed({
             description: `
@@ -48,13 +65,16 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     @command({ inhibitors: [requisites], description: "join the queue" })
     async qjoin(msg: Message) {
         const evt = this.getEvent(msg);
-        if (evt.queue.includes(msg.author.id)) {
+        if (evt.queue.some(e => e.userId == msg.author.id)) {
             await msg.channel.send(":warning: you're already in there!");
             return;
         }
-        const currentIdx = evt.currentUserId ? evt.queue.indexOf(evt.currentUserId!) : 0;
-        evt.queue.splice(currentIdx + 1, 0, msg.author.id);
-        if (!evt.currentUserId) evt.currentUserId = evt.queue[0];
+        evt.queue.push({ turnsTaken: 0, joinTime: Date.now(), userId: msg.author.id });
+        this.sortEventQueue(evt);
+        if (!evt.currentUserId) {
+            evt.currentUserId = evt.queue[0].userId;
+            evt.queue[0].turnsTaken++;
+        }
         await msg.channel.send({
             content: "okay, added you to the queue!",
             embeds: [this.getStateEmbed(msg)]
@@ -64,15 +84,16 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     @command({ inhibitors: [requisites], description: "leave the queue" })
     async qleave(msg: Message) {
         const evt = this.getEvent(msg);
-        if (!evt.queue.includes(msg.author.id)) {
+        if (!evt.queue.some(e => e.userId == msg.author.id)) {
             await msg.channel.send(":warning: you aren't in the queue");
             return;
         }
 
         if (evt.currentUserId == msg.author.id) {
-            evt.currentUserId = evt.queue[(evt.queue.indexOf(evt.currentUserId!) + 1) % evt.queue.length];
+            evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
         }
-        evt.queue = evt.queue.filter(id => id !== msg.author.id);
+        evt.queue = evt.queue.filter(e => e.userId !== msg.author.id);
+        this.sortEventQueue(evt);
         await msg.channel.send({
             content: "okay, removed you from the queue",
             embeds: [this.getStateEmbed(msg)]
@@ -88,10 +109,11 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     async qcycle(msg: Message) {
         const evt = this.getEvent(msg);
         if (!msg.member) return;
-        if (msg.member.permissions.has("MANAGE_MESSAGES") || msg.author.id == evt.currentUserId) {
-            evt.currentUserId = evt.queue[(evt.queue.indexOf(evt.currentUserId!) + 1) % evt.queue.length];
+        if (msg.member.permissions.has("MANAGE_MESSAGES") || msg.author.id == evt.currentUserId || this.client.botAdmins.includes(msg.author.id)) {
+            evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
+            evt.queue[this.indexOfUserId(evt.queue, evt.currentUserId!)].turnsTaken++;
             await msg.channel.send({
-                content: "done!",
+                content: ":ok_hand:",
                 embeds: [this.getStateEmbed(msg)]
             })
         } else {
