@@ -44,7 +44,7 @@ export default class QueueModule extends Module {
     private sortEventQueue(evt: ChannelEvent) {
         // Sort over the amount of turns taken, and fallback to the join order
         evt.queue = evt.queue
-            .sort((a, b) => b.joinTime - a.joinTime)
+            .sort((a, b) => a.joinTime - b.joinTime)
             .sort((a, b) => b.turnsTaken - a.turnsTaken);
     }
 
