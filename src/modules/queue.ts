@@ -1,4 +1,4 @@
-import CookiecordClient, { command, Inhibitor, Module } from "cookiecord";
+import CookiecordClient, { command, Inhibitor, Module, optional } from "cookiecord";
 import { Message, MessageEmbed, TextChannel } from "discord.js";
 
 const requisites: Inhibitor = async msg => (msg.guild && msg.channel.type == "GUILD_TEXT" && msg.channel.parent) ? undefined : "bad channel";
@@ -106,12 +106,14 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     }
 
     @command({ inhibitors: [requisites], description: "cycle the queue to the next participant" })
-    async qcycle(msg: Message) {
+    async qcycle(msg: Message, @optional count: number = 1) {
         const evt = this.getEvent(msg);
         if (!msg.member) return;
+        if (msg.author.id == evt.currentUserId) count = 1;
+
         if (msg.member.permissions.has("MANAGE_MESSAGES") || msg.author.id == evt.currentUserId || this.client.botAdmins.includes(msg.author.id)) {
-            evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
-            evt.queue[this.indexOfUserId(evt.queue, evt.currentUserId!)].turnsTaken++;
+            evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + count) % evt.queue.length].userId;
+            evt.queue[this.indexOfUserId(evt.queue, evt.currentUserId!)].turnsTaken += count;
             await msg.channel.send({
                 content: ":ok_hand:",
                 embeds: [this.getStateEmbed(msg)]
