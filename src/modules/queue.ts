@@ -13,6 +13,7 @@ interface ChannelEvent {
     queue: QueueEntry[];
     currentUserId?: string;
     id: string;
+    lastRead: number;
 }
 
 export default class QueueModule extends Module {
@@ -28,10 +29,17 @@ export default class QueueModule extends Module {
             throw new Error("assert chan.parentId is truthy");
         }
 
+        const EIGHT_HOURS = 2.88e+7;
         if (this.events.has(chan.parentId)) {
-            return this.events.get(chan.parentId)!;
+            const event = this.events.get(chan.parentId)!;
+            if (Date.now() - event.lastRead > EIGHT_HOURS) {
+                this.events.delete(chan.parentId);
+                return this.getEvent(msg);
+            }
+            event.lastRead = Date.now();
+            return event;
         } else {
-            const event: ChannelEvent = { queue: [], id: chan.parentId };
+            const event: ChannelEvent = { queue: [], id: chan.parentId, lastRead: Date.now() };
             this.events.set(chan.parentId, event);
             return this.getEvent(msg); // felt like a bit of recursion today..
         }
