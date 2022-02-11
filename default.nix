@@ -16,4 +16,8 @@ in y2n.mkYarnPackage {
   yarnLock = ./yarn.lock;
   yarnNix = ./yarn.nix;
   buildPhase = "yarn --offline run postinstall";
+  nativeBuildInputs = [ makeWrapper ];
+  postFixup = ''
+    wrapProgram $out/bin/anonvote-bot --prefix PATH : ${lib.makeBinPath [ ffmpeg ]}
+  '';
 }

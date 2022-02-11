@@ -5,8 +5,11 @@
     "main": "dist/index.js",
     "bin": "dist/index.js",
     "dependencies": {
-        "cookiecord": "^0.8.18",
+        "@discordjs/opus": "^0.7.0",
+        "@discordjs/voice": "^0.8.0",
+        "cookiecord": "^0.8.20",
         "dotenv-safe": "^8.2.0",
+        "libsodium-wrappers": "^0.7.9",
         "node-fetch": "^2.6.1",
         "tracer": "^1.1.5",
         "ts-node": "^10.2.0",
@@ -14,7 +17,7 @@
     },
     "scripts": {
         "start": "ts-node src",
-        "postinstall": "tsc && sed -i '1i#!/usr/bin/env node' dist/index.js && chmod +x dist/index.js"
+        "postinstall": "./regeneratey2x.sh; tsc && sed -i '1i#!/usr/bin/env node' dist/index.js && chmod +x dist/index.js && cp -r src/resources dist/resources"
     },
     "devDependencies": {
         "@types/dotenv-safe": "^8.1.1",
