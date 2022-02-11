@@ -9,10 +9,17 @@ import RateModule from "./modules/rate";
 
 dotenv.config();
 
+// TODO replace this with a better solution in cookiecord
+const isUpper = (a: string) => a == a.toUpperCase();
+const caseInsensitivePrefix =
+    (prefix: string) => (msg: Message) => [...prefix]
+        .map(x => isUpper(msg.content.slice(0, prefix.length)) ? x.toUpperCase() : x.toLowerCase())
+        .join("");
+
 const client = new CookiecordClient(
     {
         botAdmins: process.env.BOT_ADMINS?.split(","),
-        prefix: (msg: Message) => ((/^ep/gi.exec(msg.content) || [])[0] || "ep")
+        prefix: caseInsensitivePrefix("ep "),
     },
     {
         intents: [
