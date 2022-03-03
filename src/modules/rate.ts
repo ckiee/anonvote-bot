@@ -46,7 +46,7 @@ export default class RateModule extends Module {
         });
         if (state.state == "SETUP") {
             return {
-                embeds: [{ title: "Welcome to eVoicepRivATE", description: "Pick some options below! 😄"} ],
+                embeds: [{ title: "Welcome to eVoicepRivATE", description: "Pick some options below!"} ],
                 components: [
                     new MessageActionRow({
                         components: [
