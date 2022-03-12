@@ -1,5 +1,5 @@
 import CookiecordClient, { command, Inhibitor, Module, optional } from "cookiecord";
-import { Message, MessageEmbed, TextChannel } from "discord.js";
+import { User, Message, MessageEmbed, TextChannel } from "discord.js";
 
 const requisites: Inhibitor = async msg => (msg.guild && msg.channel.type == "GUILD_TEXT" && msg.channel.parent) ? undefined : "bad channel";
 
@@ -58,9 +58,9 @@ export default class QueueModule extends Module {
 
     private getStateEmbed(msg: Message): MessageEmbed {
         const evt = this.getEvent(msg);
-        const list = evt.queue.map(entry => {
+        const list = evt.queue.map((entry, i) => {
             const ifActive = (str: string) => evt.currentUserId == entry.userId ? str : "";
-            return `${ifActive("**")}- <@${entry.userId}>${ifActive(" (active) **")}`
+            return `${ifActive("**")}${i} <@${entry.userId}>${ifActive(" (active) **")}`
         }).join("\n");
         return new MessageEmbed({
             description: `
@@ -90,20 +90,26 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     }
 
     @command({ inhibitors: [requisites], description: "leave the queue" })
-    async qleave(msg: Message) {
+    async qleave(msg: Message, @optional user?: User) {
+        if (!msg.member) return;
         const evt = this.getEvent(msg);
-        if (!evt.queue.some(e => e.userId == msg.author.id)) {
+        if (!evt.queue.some(e => e.userId == msg.author.id) && !user) {
             await msg.channel.send(":warning: you aren't in the queue");
             return;
         }
 
-        if (evt.currentUserId == msg.author.id) {
+        if (user && !(msg.member.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id))) {
+            return await msg.channel.send(":warning: you must be a mod to kick people from the queue!");
+        }
+        const targetId = user?.id || msg.author.id;
+
+        if (evt.currentUserId == targetId) {
             evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
         }
-        evt.queue = evt.queue.filter(e => e.userId !== msg.author.id);
+        evt.queue = evt.queue.filter(e => e.userId !== targetId);
         this.sortEventQueue(evt);
         await msg.channel.send({
-            content: "okay, removed you from the queue",
+            content: `okay, ${user ? "kicked user" : "removed you"} from the queue`,
             embeds: [this.getStateEmbed(msg)]
         })
     }
@@ -119,15 +125,39 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         if (!msg.member) return;
         if (msg.author.id == evt.currentUserId) count = 1;
 
+        if (count < 0) count = evt.queue.length - Math.min(Math.abs(count), evt.queue.length);
+
         if (msg.member.permissions.has("MANAGE_MESSAGES") || msg.author.id == evt.currentUserId || this.client.botAdmins.includes(msg.author.id)) {
-            evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + count) % evt.queue.length].userId;
-            evt.queue[this.indexOfUserId(evt.queue, evt.currentUserId!)].turnsTaken += count;
+            // HACk this is a bit inelegant
+            for (let i = 0; i < count; i++) {
+                evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
+                evt.queue[this.indexOfUserId(evt.queue, evt.currentUserId!)].turnsTaken += count;
+            }
             await msg.channel.send({
                 content: ":ok_hand:",
                 embeds: [this.getStateEmbed(msg)]
             })
         } else {
             await msg.channel.send(":warning: you aren't a mod or the currently active participant!");
+        }
+    }
+
+    @command({ inhibitors: [requisites], description: "swap two people in the queue" })
+    async qswap(msg: Message, fromIdx: number, toIdx: number) {
+        const evt = this.getEvent(msg);
+        if (!msg.member) return;
+
+        if (msg.member.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id)) {
+            const origTo: string = JSON.parse(JSON.stringify(evt.queue[toIdx].userId));
+            evt.queue[toIdx].userId = evt.queue[fromIdx].userId;
+            evt.queue[fromIdx].userId = origTo;
+            this.sortEventQueue(evt);
+            await msg.channel.send({
+                content: "swappity swap",
+                embeds: [this.getStateEmbed(msg)]
+            })
+        } else {
+            await msg.channel.send(":warning: you aren't a mod!");
         }
     }
 }
