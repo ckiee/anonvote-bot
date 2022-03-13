@@ -56,7 +56,6 @@ export default class TopicsModule extends Module {
         let editMoons = "";
         let editMoonCount = 0;
         while (mutAvg > 0) {
-            console.log({ editMoons, mutAvg, avg });
             if (mutAvg >= 1) {
                 editMoons += "🌕";
                 editMoonCount++;
