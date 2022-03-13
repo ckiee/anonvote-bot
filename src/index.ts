@@ -6,6 +6,7 @@ import DrumrollModule from "./modules/drumroll";
 import QueueModule from "./modules/queue";
 import RandomModule from "./modules/random";
 import RateModule from "./modules/rate";
+import TopicsModule from "./modules/topics";
 
 
 dotenv.config();
@@ -46,6 +47,7 @@ if (process.argv[0].endsWith("ts-node")) {
     client.registerModule(QueueModule);
     client.registerModule(RandomModule);
     client.registerModule(DrumrollModule);
+    client.registerModule(TopicsModule);
 }
 
 client.login(process.env.TOKEN);
