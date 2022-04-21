@@ -1,5 +1,5 @@
 import { AudioPlayer, AudioPlayerIdleState, AudioPlayerState, AudioPlayerStatus, createAudioResource, joinVoiceChannel, VoiceConnectionStatus } from "@discordjs/voice";
-import CookiecordClient, { command, CommonInhibitors, listener, mergeInhibitorsNonXor, Module } from "cookiecord";
+import CookiecordClient, { command, CommonInhibitors, listener, mergeInhibitorsNonXor, Module, optional } from "cookiecord";
 import { Message, TextChannel, VoiceChannel } from "discord.js";
 import { join } from "path/posix";
 import { inspect, promisify } from "util";
@@ -16,8 +16,8 @@ export default class DrumrollModule extends Module {
                 CommonInhibitors.botAdminsOnly)
         ]
     })
-    async drumroll(msg: Message) {
-        const durationMs = Math.random() * 3000 + 2000;
+    async drumroll(msg: Message, @optional userDuration?: number): Promise<void> {
+        const durationMs = (userDuration ? userDuration * 1000 : null) || Math.random() * 3000 + 2000;
         const chan = (<TextChannel>msg.channel);
         if (!chan.parentId || !chan.parent) throw new Error("assert chan.parentId&&chan.parent is truthy");
         const voice = chan.parent.children.filter(c => c.type == "GUILD_VOICE").first();
