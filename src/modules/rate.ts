@@ -191,7 +191,7 @@ export default class RateModule extends Module {
             [
                 "resonance",
                 {
-                    "label": "Resonance (R1)",
+                    "label": "Larynx height (R1)",
                     "emoji": "💧",
                     "enabled": true,
                     "lowest": "dark",
