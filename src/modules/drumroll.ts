@@ -2,8 +2,6 @@ import { AudioPlayer, AudioPlayerIdleState, AudioPlayerState, AudioPlayerStatus,
 import CookiecordClient, { command, CommonInhibitors, listener, mergeInhibitorsNonXor, Module, optional } from "cookiecord";
 import { Message, TextChannel, VoiceChannel } from "discord.js";
 import { join } from "path/posix";
-import { inspect, promisify } from "util";
-import { logger } from "../logger";
 
 export default class DrumrollModule extends Module {
     constructor(client: CookiecordClient) {
@@ -33,8 +31,6 @@ export default class DrumrollModule extends Module {
         const audioPlayer = new AudioPlayer();
         conn.on("error", e => { throw e });
         audioPlayer.on("error", e => { throw e });
-        conn.on("debug", e => { logger.debug(e) });
-        audioPlayer.on("debug", e => { logger.debug(e) });
         const sub = conn.subscribe(audioPlayer);
         if (!sub) throw new Error("assert sub is truthy");
 
