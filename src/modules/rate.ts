@@ -1,6 +1,9 @@
+import { AudioPlayerStatus, createAudioResource, VoiceConnectionStatus } from "@discordjs/voice";
 import CookiecordClient, { command, listener, Module } from "cookiecord";
-import { GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu, MessageSelectOption } from "discord.js";
+import { TextChannel, GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu, MessageSelectOption } from "discord.js";
+import { join } from "path";
 import { logger } from "../logger";
+import {VoiceUtils} from "../voice";
 
 interface VoiceCategory {
     label: string;
@@ -405,10 +408,20 @@ export default class RateModule extends Module {
         const intrMemberId = intr.member instanceof GuildMember ? intr.member.id : intr.member?.user.id;
         if (!intrMemberId) return err("Could not fetch guild member");
 
+
+        const playClip = async (fn: string) => {
+            const voice = new VoiceUtils(<TextChannel>intr.channel);
+            await voice.waitForConnectionStatus(VoiceConnectionStatus.Ready);
+            const res = createAudioResource(join(__dirname, "..", "resources", `${fn}.ogg`));
+            voice.audioPlayer.play(res);
+            await voice.waitForPlayerStatus(AudioPlayerStatus.Idle);
+            voice.destroy();
+        };
+
         if (intr.customId == "binaryVote") {
             state.binaryVote = !state.binaryVote;
+            playClip(`no${state.binaryVote ? "" : "n"}Binary`);
         } else if (intr.customId == "abort") {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             if (state.confirmAbort && intr.channel) {
                 await intrMsg.delete();
                 return;
@@ -418,14 +431,17 @@ export default class RateModule extends Module {
         } else if (intr.customId == "showVotes") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.showVotes = !state.showVotes;
+            playClip(state.showVotes ? "showingVotes" : "hidingVotes");
         } else if (intr.customId == "showParticipants") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.showParticipants = !state.showParticipants;
+            playClip(`${state.showParticipants ? "showing" : "hiding"}Participants`);
         } else if (intr.customId == "setVoting") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "VOTING";
             // just incase they misclick, they can reset it by changing pages
             state.confirmAbort = false;
+            playClip("startVoting");
         } else if (intr.customId == "setSetup") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "SETUP";
