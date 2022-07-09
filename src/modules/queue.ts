@@ -1,7 +1,9 @@
 import CookiecordClient, { command, Inhibitor, Module, optional } from "cookiecord";
 import { User, Message, MessageEmbed, TextChannel } from "discord.js";
 
-const requisites: Inhibitor = async msg => (msg.guild && msg.channel.type == "GUILD_TEXT" && msg.channel.parent) ? undefined : "bad channel";
+const requisites: Inhibitor = async msg => (msg.guild &&
+    (msg.channel.type == "GUILD_VOICE" || msg.channel.type == "GUILD_TEXT") &&
+    msg.channel.parent) ? undefined : "bad channel";
 
 interface QueueEntry {
     userId: string;
