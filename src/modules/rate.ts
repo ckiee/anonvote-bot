@@ -1,9 +1,9 @@
 import { AudioPlayerStatus, createAudioResource, VoiceConnectionStatus } from "@discordjs/voice";
 import CookiecordClient, { command, listener, Module } from "cookiecord";
-import { TextChannel, GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu, MessageSelectOption } from "discord.js";
+import { MessageEditOptions, TextChannel, GuildMember, Interaction, Message, MessageActionRow, MessageButton, MessagePayload, MessageOptions, Collection, MessageSelectMenu, MessageSelectOption } from "discord.js";
 import { join } from "path";
 import { logger } from "../logger";
-import {VoiceUtils} from "../voice";
+import { VoiceUtils } from "../voice";
 
 interface VoiceCategory {
     label: string;
@@ -478,7 +478,7 @@ export default class RateModule extends Module {
         } else {
             return err(`unknown interaction customId ${intr.customId} in ${state.state}`);
         }
-        await intr.update(this.makeMessage(state));
+        await intr.update(this.makeMessage(state) as MessageEditOptions);
     }
 
 }

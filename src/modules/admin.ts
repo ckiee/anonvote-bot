@@ -48,9 +48,8 @@ ${CODEBLOCK}`);
         } catch (error) {
             msg.channel.send(
                 "error! " +
-                (error || "")
-                    .toString()
-                    .split(this.client.token)
+                    `${error}`
+                    .split(this.client.token || "Surely no one will ever type \x0a this. And surely this will never happen.")
                     .join("[TOKEN]")
             );
         }

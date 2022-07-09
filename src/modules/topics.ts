@@ -1,5 +1,5 @@
 import CookiecordClient, { command, CommonInhibitors, listener, Module } from "cookiecord";
-import { Message, TextBasedChannels, MessageReaction, User } from "discord.js";
+import { Message, TextBasedChannel, MessageReaction, User } from "discord.js";
 import { logger } from "../logger";
 
 export default class TopicsModule extends Module {
@@ -34,7 +34,7 @@ export default class TopicsModule extends Module {
         await Promise.all(topics.map(topic => this.makeRateMessage(msg.channel, topic)))
     }
 
-    async makeRateMessage(channel: TextBasedChannels, topic: string) {
+    async makeRateMessage(channel: TextBasedChannel, topic: string) {
         const msg = await channel.send(topic + "\n`:`");
         await Promise.all(this.moons.map(moon => msg.react(moon)));
     }

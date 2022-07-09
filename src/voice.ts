@@ -1,4 +1,4 @@
-import { AudioPlayer, AudioPlayerIdleState, AudioPlayerState, AudioPlayerStatus, createAudioResource, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
+import { AudioPlayerEvents, AudioPlayer, AudioPlayerState, AudioPlayerStatus, createAudioResource, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
 import { Message, TextChannel, VoiceChannel } from "discord.js";
 import { join } from "path";
 
@@ -28,12 +28,14 @@ export class VoiceUtils {
 
     getPlayerStatus() {
         return new Promise<AudioPlayerState>((resolve) => {
-            this.audioPlayer.once("stateChange", (o, s) => {
+            // error TS2345: Argument of type '"stateChange"' is not assignable to parameter of type 'AudioPlayerStatus.Idle'.
+            // Not willing to suffer for this.
+            // @ts-ignore
+            this.audioPlayer.once("stateChange", (_o, s) => {
                 resolve(s);
             });
         });
     }
-
 
     destroy() {
         if (this.sub) this.sub.unsubscribe();
