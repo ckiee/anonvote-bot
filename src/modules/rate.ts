@@ -26,6 +26,7 @@ interface InteractionState {
     categories: VoiceCategories;
     hasVotedBefore: boolean; // we need to disable category selection if there's data
     binaryVote: boolean;
+    soundboard: boolean;
 };
 
 function ratingToMoons(rating: number) {
@@ -41,6 +42,7 @@ export default class RateModule extends Module {
     }
 
     stateStore: Collection<string, InteractionState> = new Collection(); // <messageId, ...>
+    voice?: VoiceUtils;
 
     private makeMessage(state: InteractionState): MessagePayload | MessageOptions {
         const abortButton = new MessageButton({
@@ -56,11 +58,10 @@ export default class RateModule extends Module {
                     new MessageActionRow({
                         components: [
                             new MessageButton({
-                                disabled: true,
-                                customId: "headerVisibOptions",
-                                style: "PRIMARY",
-                                emoji: "💼",
-                                label: "Visibility Options"
+                                customId: "soundboard",
+                                style: state.soundboard ? "SUCCESS" : "DANGER",
+                                emoji: "🗣",
+                                label: "Soundboard",
                             }),
                             new MessageButton({
                                 customId: "showVotes",
@@ -385,7 +386,8 @@ export default class RateModule extends Module {
             state: "SETUP",
             categories,
             hasVotedBefore: false,
-            binaryVote: false
+            binaryVote: false,
+            soundboard: false
         };
 
         const reply = await msg.reply(this.makeMessage(state));
@@ -409,18 +411,27 @@ export default class RateModule extends Module {
         if (!intrMemberId) return err("Could not fetch guild member");
 
 
-        const playClip = async (fn: string) => {
-            const voice = new VoiceUtils(<TextChannel>intr.channel);
+        const maybePlayClip = async (fn: string) => {
+            if (!state.soundboard) return;
+            if (!this.voice) {
+                this.voice = new VoiceUtils(<TextChannel>intr.channel);;
+            }
+            const voice = this.voice;
+
             await voice.waitForConnectionStatus(VoiceConnectionStatus.Ready);
             const res = createAudioResource(join(__dirname, "..", "resources", `${fn}.ogg`));
             voice.audioPlayer.play(res);
             await voice.waitForPlayerStatus(AudioPlayerStatus.Idle);
-            voice.destroy();
+
+            if (this.voice) {
+                voice.destroy();
+                this.voice = undefined;
+            }
         };
 
         if (intr.customId == "binaryVote") {
             state.binaryVote = !state.binaryVote;
-            playClip(`no${state.binaryVote ? "" : "n"}Binary`);
+            maybePlayClip(`no${state.binaryVote ? "" : "n"}Binary`);
         } else if (intr.customId == "abort") {
             if (state.confirmAbort && intr.channel) {
                 await intrMsg.delete();
@@ -431,17 +442,20 @@ export default class RateModule extends Module {
         } else if (intr.customId == "showVotes") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.showVotes = !state.showVotes;
-            playClip(state.showVotes ? "showingVotes" : "hidingVotes");
+            maybePlayClip(state.showVotes ? "showingVotes" : "hidingVotes");
+        } else if (intr.customId == "soundboard") {
+            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+            state.soundboard = !state.soundboard;
         } else if (intr.customId == "showParticipants") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.showParticipants = !state.showParticipants;
-            playClip(`${state.showParticipants ? "showing" : "hiding"}Participants`);
+            maybePlayClip(`${state.showParticipants ? "showing" : "hiding"}Participants`);
         } else if (intr.customId == "setVoting") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "VOTING";
             // just incase they misclick, they can reset it by changing pages
             state.confirmAbort = false;
-            playClip("startVoting");
+            maybePlayClip("startVoting");
         } else if (intr.customId == "setSetup") {
             if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
             state.state = "SETUP";
