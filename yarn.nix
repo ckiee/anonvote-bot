@@ -2,27 +2,19 @@
   offline_cache = linkFarm "offline" packages;
   packages = [
     {
-      name = "_cspotcode_source_map_consumer___source_map_consumer_0.8.0.tgz";
+      name = "_cspotcode_source_map_support___source_map_support_0.8.1.tgz";
       path = fetchurl {
-        name = "_cspotcode_source_map_consumer___source_map_consumer_0.8.0.tgz";
-        url  = "https://registry.yarnpkg.com/@cspotcode/source-map-consumer/-/source-map-consumer-0.8.0.tgz";
-        sha512 = "41qniHzTU8yAGbCp04ohlmSrZf8bkf/iJsl3V0dRGsQN/5GFfx+LbCSsCpp2gqrqjTVg/K6O8ycoV35JIwAzAg==";
+        name = "_cspotcode_source_map_support___source_map_support_0.8.1.tgz";
+        url  = "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz";
+        sha512 = "IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==";
       };
     }
     {
-      name = "_cspotcode_source_map_support___source_map_support_0.6.1.tgz";
+      name = "_discordjs_builders___builders_0.16.0_dev.1657757509_fe34f48.tgz";
       path = fetchurl {
-        name = "_cspotcode_source_map_support___source_map_support_0.6.1.tgz";
-        url  = "https://registry.yarnpkg.com/@cspotcode/source-map-support/-/source-map-support-0.6.1.tgz";
-        sha512 = "DX3Z+T5dt1ockmPdobJS/FAsQPW4V4SrWEhD2iYQT2Cb2tQsiMnYxrcUH9By/Z3B+v0S5LMBkQtV/XOBbpLEOg==";
-      };
-    }
-    {
-      name = "_discordjs_builders___builders_0.16.0_dev.1657325364_33ae7df.tgz";
-      path = fetchurl {
-        name = "_discordjs_builders___builders_0.16.0_dev.1657325364_33ae7df.tgz";
-        url  = "https://registry.yarnpkg.com/@discordjs/builders/-/builders-0.16.0-dev.1657325364-33ae7df.tgz";
-        sha512 = "V1RKveho6vbMt0Opbjp9/vn2afJqig4x9mJUwrMZrNLHtBVH5YJpRNIBkeeY5/DWr5uQQ/HjdOmUR1imq23v9g==";
+        name = "_discordjs_builders___builders_0.16.0_dev.1657757509_fe34f48.tgz";
+        url  = "https://registry.yarnpkg.com/@discordjs/builders/-/builders-0.16.0-dev.1657757509-fe34f48.tgz";
+        sha512 = "pxaG7OHRqsnd8MPhfVYQUirrvVmMWxwjSL0j4adHz1w7gWUtgchxOVcOCLgWdFDCoN4bNwRjkstNcI+yLpNE7w==";
       };
     }
     {
@@ -58,6 +50,30 @@
       };
     }
     {
+      name = "_jridgewell_resolve_uri___resolve_uri_3.1.0.tgz";
+      path = fetchurl {
+        name = "_jridgewell_resolve_uri___resolve_uri_3.1.0.tgz";
+        url  = "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.0.tgz";
+        sha512 = "F2msla3tad+Mfht5cJq7LSXcdudKTWCVYUgw6pLFOOHSTtZlj6SWNYAp+AhuqLmWdBO2X5hPrLcu8cVP8fy28w==";
+      };
+    }
+    {
+      name = "_jridgewell_sourcemap_codec___sourcemap_codec_1.4.14.tgz";
+      path = fetchurl {
+        name = "_jridgewell_sourcemap_codec___sourcemap_codec_1.4.14.tgz";
+        url  = "https://registry.yarnpkg.com/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.14.tgz";
+        sha512 = "XPSJHWmi394fuUuzDnGz1wiKqWfo1yXecHQMRf2l6hztTO+nPru658AyDngaBe7isIxEkRsPR3FZh+s7iVa4Uw==";
+      };
+    }
+    {
+      name = "_jridgewell_trace_mapping___trace_mapping_0.3.9.tgz";
+      path = fetchurl {
+        name = "_jridgewell_trace_mapping___trace_mapping_0.3.9.tgz";
+        url  = "https://registry.yarnpkg.com/@jridgewell/trace-mapping/-/trace-mapping-0.3.9.tgz";
+        sha512 = "3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==";
+      };
+    }
+    {
       name = "_sapphire_async_queue___async_queue_1.3.1.tgz";
       path = fetchurl {
         name = "_sapphire_async_queue___async_queue_1.3.1.tgz";
@@ -66,11 +82,19 @@
       };
     }
     {
-      name = "_sapphire_shapeshift___shapeshift_3.4.1.tgz";
+      name = "_sapphire_shapeshift___shapeshift_3.5.0.tgz";
       path = fetchurl {
-        name = "_sapphire_shapeshift___shapeshift_3.4.1.tgz";
-        url  = "https://registry.yarnpkg.com/@sapphire/shapeshift/-/shapeshift-3.4.1.tgz";
-        sha512 = "OSR/yVE6butSlp/yvKntcg92k8IIDeTccfz1fw69lTZN02+JJ2GyKnA3Z1CLYelWc8Dh/yqO/iGTo9ypxFcAcg==";
+        name = "_sapphire_shapeshift___shapeshift_3.5.0.tgz";
+        url  = "https://registry.yarnpkg.com/@sapphire/shapeshift/-/shapeshift-3.5.0.tgz";
+        sha512 = "r6Iw3ZWgwzWcWDtsPwHKHnc6LCD84AqyXi1IolSS8TGLodTuggYxQ63V+Si5Jb7KVLhMYPCdlwM0HEDHEeZ9Iw==";
+      };
+    }
+    {
+      name = "_sindresorhus_is___is_4.6.0.tgz";
+      path = fetchurl {
+        name = "_sindresorhus_is___is_4.6.0.tgz";
+        url  = "https://registry.yarnpkg.com/@sindresorhus/is/-/is-4.6.0.tgz";
+        sha512 = "t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==";
       };
     }
     {
@@ -410,14 +434,6 @@
       };
     }
     {
-      name = "discord_api_types___discord_api_types_0.36.1.tgz";
-      path = fetchurl {
-        name = "discord_api_types___discord_api_types_0.36.1.tgz";
-        url  = "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.36.1.tgz";
-        sha512 = "PTDinUU574hXA9Ko9wrftL1iww1raNiRVKjuPIWQ5Li1g7vQPArpZWw9x01kh/IXLPdzSAJ6H8T0eAYzxzFzIg==";
-      };
-    }
-    {
       name = "discord.js___discord.js_13.8.1.tgz";
       path = fetchurl {
         name = "discord.js___discord.js_13.8.1.tgz";
@@ -623,6 +639,14 @@
         name = "libsodium___libsodium_0.7.9.tgz";
         url  = "https://registry.yarnpkg.com/libsodium/-/libsodium-0.7.9.tgz";
         sha512 = "gfeADtR4D/CM0oRUviKBViMGXZDgnFdMKMzHsvBdqLBHd9ySi6EtYnmuhHVDDYgYpAO8eU8hEY+F8vIUAPh08A==";
+      };
+    }
+    {
+      name = "lodash.uniqwith___lodash.uniqwith_4.5.0.tgz";
+      path = fetchurl {
+        name = "lodash.uniqwith___lodash.uniqwith_4.5.0.tgz";
+        url  = "https://registry.yarnpkg.com/lodash.uniqwith/-/lodash.uniqwith-4.5.0.tgz";
+        sha512 = "7lYL8bLopMoy4CTICbxygAUq6CdRJ36vFc80DucPueUee+d5NBRxz3FdT9Pes/HEx5mPoT9jwnsEJWz1N7uq7Q==";
       };
     }
     {
@@ -946,11 +970,11 @@
       };
     }
     {
-      name = "ts_node___ts_node_10.2.0.tgz";
+      name = "ts_node___ts_node_10.9.1.tgz";
       path = fetchurl {
-        name = "ts_node___ts_node_10.2.0.tgz";
-        url  = "https://registry.yarnpkg.com/ts-node/-/ts-node-10.2.0.tgz";
-        sha512 = "FstYHtQz6isj8rBtYMN4bZdnXN1vq4HCbqn9vdNQcInRqtB86PePJQIxE6es0PhxKWhj2PHuwbG40H+bxkZPmg==";
+        name = "ts_node___ts_node_10.9.1.tgz";
+        url  = "https://registry.yarnpkg.com/ts-node/-/ts-node-10.9.1.tgz";
+        sha512 = "NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==";
       };
     }
     {
@@ -983,6 +1007,14 @@
         name = "util_deprecate___util_deprecate_1.0.2.tgz";
         url  = "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz";
         sha1 = "RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=";
+      };
+    }
+    {
+      name = "v8_compile_cache_lib___v8_compile_cache_lib_3.0.1.tgz";
+      path = fetchurl {
+        name = "v8_compile_cache_lib___v8_compile_cache_lib_3.0.1.tgz";
+        url  = "https://registry.yarnpkg.com/v8-compile-cache-lib/-/v8-compile-cache-lib-3.0.1.tgz";
+        sha512 = "wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==";
       };
     }
     {
