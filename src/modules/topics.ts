@@ -26,7 +26,7 @@ export default class TopicsModule extends Module {
                 break;
             } else {
                 topics = [...topics, ...tm.content.split("\n")
-                    .filter(line => line.startsWith("- "))
+                    .filter(line => line.startsWith("-"))
                     .map(line => line.replace(/^-\s+/, ""))];
             }
         }
