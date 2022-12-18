@@ -16,6 +16,8 @@ interface ChannelEvent {
     currentUserId?: string;
     id: string;
     lastRead: number;
+    allowJoins: boolean;
+    disallowOnCycle: boolean;
 }
 
 export default class QueueModule extends Module {
@@ -41,7 +43,12 @@ export default class QueueModule extends Module {
             event.lastRead = Date.now();
             return event;
         } else {
-            const event: ChannelEvent = { queue: [], id: chan.parentId, lastRead: Date.now() };
+            const event: ChannelEvent = { queue: [],
+                id: chan.parentId,
+                lastRead: Date.now(),
+                allowJoins: true,
+                disallowOnCycle: true
+            };
             this.events.set(chan.parentId, event);
             return this.getEvent(msg); // felt like a bit of recursion today..
         }
@@ -73,20 +80,32 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     }
 
     @command({ inhibitors: [requisites], description: "join the queue" })
-    async qjoin(msg: Message) {
+    async qjoin(msg: Message, @optional user?: User) {
         const evt = this.getEvent(msg);
-        if (evt.queue.some(e => e.userId == msg.author.id)) {
-            await msg.channel.send(":warning: you're already in there!");
+
+        if (user && !(msg.member?.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id))) {
+            await msg.channel.send(":warning: you must be a mod to add other users to the queue!");
             return;
         }
-        evt.queue.push({ turnsTaken: 0, joinTime: Date.now(), userId: msg.author.id });
+        if (!user && !evt.allowJoins) {
+            await msg.channel.send(":warning: joining has been disabled for this event. come on time!");
+            return;
+        }
+        const targetId = user?.id || msg.author.id;
+
+        if (evt.queue.some(e => e.userId == targetId)) {
+            await msg.channel.send(`:warning: ${user?`${user}'s'`:"you're"} already in there!`);
+            return;
+        }
+
+        evt.queue.push({ turnsTaken: 0, joinTime: Date.now(), userId: targetId });
         this.sortEventQueue(evt);
         if (!evt.currentUserId) {
             evt.currentUserId = evt.queue[0].userId;
             evt.queue[0].turnsTaken++;
         }
         await msg.channel.send({
-            content: "okay, added you to the queue!",
+            content: `okay, added ${user||"you"} to the queue!`,
             embeds: [this.getStateEmbed(msg)]
         })
     }
@@ -135,6 +154,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
                 evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
                 evt.queue[this.indexOfUserId(evt.queue, evt.currentUserId!)].turnsTaken += count;
             }
+            if (evt.disallowOnCycle) evt.allowJoins = false;
             await msg.channel.send({
                 content: ":ok_hand:",
                 embeds: [this.getStateEmbed(msg)]
@@ -157,6 +177,23 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
             await msg.channel.send({
                 content: "swappity swap",
                 embeds: [this.getStateEmbed(msg)]
+            })
+        } else {
+            await msg.channel.send(":warning: you aren't a mod!");
+        }
+    }
+
+
+    @command({ inhibitors: [requisites], description: "swap two people in the queue" })
+    async qcutoff(msg: Message) {
+        const evt = this.getEvent(msg);
+        if (!msg.member) return;
+
+        if (msg.member.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id)) {
+            evt.allowJoins = !evt.allowJoins;
+            evt.disallowOnCycle = false;
+            await msg.channel.send({
+                content: `:ok_hand: ${evt.allowJoins ? "joining the queue is now allowed! \`ep qjoin\`" : "joining the queue is now disallowed!"}`,
             })
         } else {
             await msg.channel.send(":warning: you aren't a mod!");
