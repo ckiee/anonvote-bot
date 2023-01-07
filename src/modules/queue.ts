@@ -184,7 +184,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     }
 
 
-    @command({ inhibitors: [requisites], description: "swap two people in the queue" })
+    @command({ inhibitors: [requisites], description: "swap two people in the queue", aliases: ["qlock"],  })
     async qcutoff(msg: Message) {
         const evt = this.getEvent(msg);
         if (!msg.member) return;
