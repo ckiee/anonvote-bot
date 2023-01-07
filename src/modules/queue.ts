@@ -145,6 +145,9 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         const evt = this.getEvent(msg);
         if (!msg.member) return;
         if (msg.author.id == evt.currentUserId) count = 1;
+        if (evt.queue.length < 2) {
+            return await msg.channel.send(":x: i need at least *2* people in the queue, but there's only *${evt.queue.length}*");
+        }
 
         if (count < 0) count = evt.queue.length - Math.min(Math.abs(count), evt.queue.length);
 
