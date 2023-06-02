@@ -14,7 +14,7 @@ export default class TopicsModule extends Module {
     @command({ inhibitors: [CommonInhibitors.guildsOnly] })
     async topics(msg: Message): Promise<void> {
         if (!msg.member || !msg.guild) return;
-        const topicsChan = (await msg.guild.channels.fetch()).filter(c => c.name == "lounge-topics").first();
+        const topicsChan = (await msg.guild.channels.fetch()).filter(c => c?.name == "lounge-topics").first();
         if (!topicsChan || topicsChan.type !== "GUILD_TEXT") {
             throw new Error("couldn't find #lounge-topics");
         }

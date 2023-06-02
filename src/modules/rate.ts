@@ -57,12 +57,13 @@ export default class RateModule extends Module {
                 components: [
                     new MessageActionRow({
                         components: [
-                            new MessageButton({
-                                customId: "soundboard",
-                                style: state.soundboard ? "SUCCESS" : "DANGER",
-                                emoji: "🗣",
-                                label: "Soundboard",
-                            }),
+                            // borked, unfortunately. TODO
+                            // new MessageButton({
+                            //     customId: "soundboard",
+                            //     style: state.soundboard ? "SUCCESS" : "DANGER",
+                            //     emoji: "🗣",
+                            //     label: "Soundboard",
+                            // }),
                             new MessageButton({
                                 customId: "showVotes",
                                 style: state.showVotes ? "SUCCESS" : "DANGER",

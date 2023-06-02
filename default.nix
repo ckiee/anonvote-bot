@@ -3,7 +3,7 @@
 with pkgs;
 
 let
-  node = nodejs-16_x;
+  node = nodejs_20;
   y2n = yarn2nix-moretea.override {
     nodejs = node;
     yarn = yarn.override { nodejs = node; };
