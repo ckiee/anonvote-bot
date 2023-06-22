@@ -1,5 +1,5 @@
 import { AudioPlayerEvents, AudioPlayer, AudioPlayerState, AudioPlayerStatus, createAudioResource, joinVoiceChannel, PlayerSubscription, VoiceConnection, VoiceConnectionStatus } from "@discordjs/voice";
-import { Message, TextChannel, VoiceChannel } from "discord.js";
+import { Message, TextChannel, VoiceChannel, User } from "discord.js";
 import { join } from "path";
 
 export class VoiceUtils {
@@ -7,9 +7,9 @@ export class VoiceUtils {
     sub?: PlayerSubscription;
     conn?: VoiceConnection;
 
-    constructor(private chan: TextChannel) {
+    constructor(private chan: TextChannel, findUser: User) {
         if (!chan.parentId || !chan.parent) throw new Error("assert chan.parentId&&chan.parent is truthy");
-        const voice = chan.parent.children.filter(c => c.type == "GUILD_VOICE").first();
+        const voice = chan.parent.children.find(c => c.type == "GUILD_VOICE" && c.members.has(findUser.id));
         if (!voice) throw new Error("assert voice is truthy");
         const conn = this.conn = joinVoiceChannel({
             channelId: voice.id,

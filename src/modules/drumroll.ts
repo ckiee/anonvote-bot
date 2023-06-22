@@ -17,7 +17,7 @@ export default class DrumrollModule extends Module {
     })
     async drumroll(msg: Message, @optional userDuration?: number): Promise<void> {
         const durationMs = (userDuration ? userDuration * 1000 : null) || Math.random() * 3000 + 2000;
-        const voice = new VoiceUtils(<TextChannel>msg.channel);
+        const voice = new VoiceUtils(<TextChannel>msg.channel, msg.author);
 
         await voice.waitForConnectionStatus(VoiceConnectionStatus.Ready);
 
