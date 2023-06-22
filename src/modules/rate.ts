@@ -53,7 +53,7 @@ export default class RateModule extends Module {
         });
         if (state.state == "SETUP") {
             return {
-                embeds: [{ title: "Welcome to eVoicepRivATE", description: "Pick some options below!"}  ],
+                embeds: [{ title: `Welcome to ${this.client.user?.username}`, description: "Pick some options below!"}  ],
                 components: [
                     new MessageActionRow({
                         components: [
@@ -397,103 +397,108 @@ export default class RateModule extends Module {
 
     @listener({ event: "interactionCreate" })
     async buttonPress(intr: Interaction) {
-        if (!(intr.isButton() || intr.isSelectMenu())) return;
-        const state = this.stateStore.get(intr.message.id);
-        const err = async (reason: string) => {
-            logger.error(reason);
-            await intr.reply({ content: `:x: ${reason}`, ephemeral: true })
-        }
-
-        if (state == undefined) return;
-
-        const intrMsg = intr.message instanceof Message ? intr.message : await intr.channel?.messages.fetch(intr.message.id);
-        if (!intrMsg) return err("Could not fetch interaction message, missing channel");
-        const intrMemberId = intr.member instanceof GuildMember ? intr.member.id : intr.member?.user.id;
-        if (!intrMemberId) return err("Could not fetch guild member");
-
-
-        const maybePlayClip = async (fn: string) => {
-            if (!state.soundboard) return;
-            if (!this.voice) {
-                this.voice = new VoiceUtils(<TextChannel>intr.channel);;
+        try {
+            if (!(intr.isButton() || intr.isSelectMenu())) return;
+            const state = this.stateStore.get(intr.message.id);
+            const err = async (reason: string) => {
+                logger.error(reason);
+                await intr.reply({ content: `:x: ${reason}`, ephemeral: true })
             }
-            const voice = this.voice;
 
-            await voice.waitForConnectionStatus(VoiceConnectionStatus.Ready);
-            const res = createAudioResource(join(__dirname, "..", "resources", `${fn}.ogg`));
-            voice.audioPlayer.play(res);
-            await voice.waitForPlayerStatus(AudioPlayerStatus.Idle);
+            if (state == undefined) return;
 
-            if (this.voice) {
-                voice.destroy();
-                this.voice = undefined;
-            }
-        };
+            const intrMsg = intr.message instanceof Message ? intr.message : await intr.channel?.messages.fetch(intr.message.id);
+            if (!intrMsg) return err("Could not fetch interaction message, missing channel");
+            const intrMemberId = intr.member instanceof GuildMember ? intr.member.id : intr.member?.user.id;
+            if (!intrMemberId) return err("Could not fetch guild member");
 
-        if (intr.customId == "binaryVote") {
-            state.binaryVote = !state.binaryVote;
-            maybePlayClip(`no${state.binaryVote ? "" : "n"}Binary`);
-        } else if (intr.customId == "abort") {
-            if (state.confirmAbort && intr.channel) {
-                await intrMsg.delete();
-                return;
-            } else {
-                state.confirmAbort = true;
-            }
-        } else if (intr.customId == "showVotes") {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
-            state.showVotes = !state.showVotes;
-            maybePlayClip(state.showVotes ? "showingVotes" : "hidingVotes");
-        } else if (intr.customId == "soundboard") {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
-            state.soundboard = !state.soundboard;
-        } else if (intr.customId == "showParticipants") {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
-            state.showParticipants = !state.showParticipants;
-            maybePlayClip(`${state.showParticipants ? "showing" : "hiding"}Participants`);
-        } else if (intr.customId == "setVoting") {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
-            state.state = "VOTING";
-            // just incase they misclick, they can reset it by changing pages
-            state.confirmAbort = false;
-            maybePlayClip("startVoting");
-        } else if (intr.customId == "setSetup") {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
-            state.state = "SETUP";
-            // see above
-            state.confirmAbort = false;
-        } else if (intr.customId == "extraCategory" && intr.isSelectMenu()) {
-            if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
-            state.categories = state.categories.mapValues((category, id) => {
-                category.enabled = intr.values.includes(id);
-                return category;
-            });
 
-        } else if (state.state == "VOTING" && intr.customId.startsWith("select#_#") && intr.isSelectMenu()) {
-            // no awaits in this block to avoid race conditions
-            state.hasVotedBefore = true;
-            const categoryId = intr.customId.split("#_#")[1];
-            if (intr.values.length <= 0) return;
-            if (intr.values[0] != "total") {
-                const level = parseInt(intr.values[0], 10);
-
-                const rating = state.ratings.get(categoryId);
-                if (!rating) return err("missing rating in `state.ratings`");
-                if (level >= rating.length) return err("couldn't derefrence `rating[level]`")
-
-                state.participants.add(intrMemberId);
-
-                if (rating[level].has(intr.user.id)) {
-                    rating[level].delete(intr.user.id);
-                } else {
-                    rating.forEach(set => set.delete(intr.user.id));
-                    rating[level].add(intr.user.id);
+            const maybePlayClip = async (fn: string) => {
+                if (!state.soundboard) return;
+                if (!this.voice) {
+                    this.voice = new VoiceUtils(<TextChannel>intr.channel, intr.user);;
                 }
+                const voice = this.voice;
+
+                await voice.waitForConnectionStatus(VoiceConnectionStatus.Ready);
+                const res = createAudioResource(join(__dirname, "..", "resources", `${fn}.ogg`));
+                voice.audioPlayer.play(res);
+                await voice.waitForPlayerStatus(AudioPlayerStatus.Idle);
+
+                if (this.voice) {
+                    voice.destroy();
+                    this.voice = undefined;
+                }
+            };
+
+            if (intr.customId == "binaryVote") {
+                state.binaryVote = !state.binaryVote;
+                maybePlayClip(`no${state.binaryVote ? "" : "n"}Binary`);
+            } else if (intr.customId == "abort") {
+                if (state.confirmAbort && intr.channel) {
+                    await intrMsg.delete();
+                    return;
+                } else {
+                    state.confirmAbort = true;
+                }
+            } else if (intr.customId == "showVotes") {
+                if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+                state.showVotes = !state.showVotes;
+                maybePlayClip(state.showVotes ? "showingVotes" : "hidingVotes");
+            } else if (intr.customId == "soundboard") {
+                if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+                state.soundboard = !state.soundboard;
+            } else if (intr.customId == "showParticipants") {
+                if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+                state.showParticipants = !state.showParticipants;
+                maybePlayClip(`${state.showParticipants ? "showing" : "hiding"}Participants`);
+            } else if (intr.customId == "setVoting") {
+                if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+                state.state = "VOTING";
+                // just incase they misclick, they can reset it by changing pages
+                state.confirmAbort = false;
+                maybePlayClip("startVoting");
+            } else if (intr.customId == "setSetup") {
+                if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+                state.state = "SETUP";
+                // see above
+                state.confirmAbort = false;
+            } else if (intr.customId == "extraCategory" && intr.isSelectMenu()) {
+                if (state.originatorId !== intrMemberId) return err("You didn't make this poll!");
+                state.categories = state.categories.mapValues((category, id) => {
+                    category.enabled = intr.values.includes(id);
+                    return category;
+                });
+
+            } else if (state.state == "VOTING" && intr.customId.startsWith("select#_#") && intr.isSelectMenu()) {
+                // no awaits in this block to avoid race conditions
+                state.hasVotedBefore = true;
+                const categoryId = intr.customId.split("#_#")[1];
+                if (intr.values.length <= 0) return;
+                if (intr.values[0] != "total") {
+                    const level = parseInt(intr.values[0], 10);
+
+                    const rating = state.ratings.get(categoryId);
+                    if (!rating) return err("missing rating in `state.ratings`");
+                    if (level >= rating.length) return err("couldn't derefrence `rating[level]`")
+
+                    state.participants.add(intrMemberId);
+
+                    if (rating[level].has(intr.user.id)) {
+                        rating[level].delete(intr.user.id);
+                    } else {
+                        rating.forEach(set => set.delete(intr.user.id));
+                        rating[level].add(intr.user.id);
+                    }
+                }
+            } else {
+                return err(`unknown interaction customId ${intr.customId} in ${state.state}`);
             }
-        } else {
-            return err(`unknown interaction customId ${intr.customId} in ${state.state}`);
+            await intr.update(this.makeMessage(state) as MessageEditOptions);
+        } catch (error) {
+            console.error("Rate interaction handler error", error);
+            intr.channel?.send(`something went very wrong with me! ${this.client.botAdmins.map(id => `<@${id}>`).join(" ")}`)
         }
-        await intr.update(this.makeMessage(state) as MessageEditOptions);
     }
 
 }
