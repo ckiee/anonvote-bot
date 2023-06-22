@@ -5,7 +5,7 @@ Yet another discord bot for a server I'm in; read the code.
 ## License
 
 ```
-Copyright (C) 2021 ckie
+Copyright (C) 2021-2023 ckie
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
