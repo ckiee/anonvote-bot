@@ -135,6 +135,24 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         })
     }
 
+    @command({ inhibitors: [requisites], description: "clear the queue of all previous state", aliases: ["qflush"] })
+    async qclear(msg: Message) {
+        if (!(msg.member?.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id))) {
+            return await msg.channel.send(":warning: you must be a mod to clear the queue!");
+        }
+
+        const chan = (<TextChannel>msg.channel);
+        if (!chan.parentId) {
+            throw new Error("assert chan.parentId is truthy");
+        }
+
+        this.events.delete(chan.parentId);
+        await msg.channel.send({
+            content: "a new era begins:",
+            embeds: [this.getStateEmbed(msg)]
+        })
+    }
+
     @command({ inhibitors: [requisites], description: "get the current queue status" })
     async queue(msg: Message) {
         await msg.channel.send({ embeds: [this.getStateEmbed(msg)] });
