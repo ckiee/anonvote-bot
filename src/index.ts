@@ -1,4 +1,4 @@
-import CookiecordClient from "cookiecord";
+import CookiecordClient, { HelpModule } from "cookiecord";
 import { Message, Intents } from "discord.js";
 import dotenv from "dotenv-safe";
 import AdminModule from "./modules/admin";
@@ -38,6 +38,7 @@ const client = new CookiecordClient(
 );
 
 
+client.registerModule(HelpModule);
 if (process.argv[0].endsWith("ts-node")) {
     client.loadModulesFromFolder("src/modules");
     client.reloadModulesFromFolder("src/modules");
