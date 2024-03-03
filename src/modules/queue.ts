@@ -33,10 +33,10 @@ export default class QueueModule extends Module {
             throw new Error("assert chan.parentId is truthy");
         }
 
-        const EIGHT_HOURS = 2.88e+7;
+        const HOUR = 3600000;
         if (this.events.has(chan.parentId)) {
             const event = this.events.get(chan.parentId)!;
-            if (Date.now() - event.lastRead > EIGHT_HOURS) {
+            if (Date.now() - event.lastRead > HOUR) {
                 this.events.delete(chan.parentId);
                 return this.getEvent(msg);
             }
@@ -65,15 +65,21 @@ export default class QueueModule extends Module {
             .sort((a, b) => b.turnsTaken - a.turnsTaken);
     }
 
-    private getStateEmbed(msg: Message): MessageEmbed {
+    private getLockEmoji(msg: Message) {
+        const evt = this.getEvent(msg);
+        return !evt.allowJoins ? (evt.disallowOnCycle ? "🔏" : "🔐") : "";
+    }
+
+    private getStateEmbed(msg: Message, joiningUserId?: string): MessageEmbed {
         const evt = this.getEvent(msg);
         const list = evt.queue.map((entry, i) => {
             const ifActive = (str: string) => evt.currentUserId == entry.userId ? str : "";
-            return `${ifActive("**")}${i} <@${entry.userId}>${ifActive(" (active) **")}`
+            const joinIndicator = joiningUserId == entry.userId ? "⇐" : ""
+            return `${ifActive("**")}${i} <@${entry.userId}>${ifActive(" (active) **")}${joinIndicator}`
         }).join("\n");
         return new MessageEmbed({
             description: `
-**__Queue for <#${evt.id}>__**
+**__Queue for <#${evt.id}>__** ${this.getLockEmoji(msg)}
 
 ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         })
@@ -106,7 +112,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         }
         await msg.channel.send({
             content: `okay, added ${user||"you"} to the queue!`,
-            embeds: [this.getStateEmbed(msg)]
+            embeds: [this.getStateEmbed(msg, targetId)]
         })
     }
 
@@ -205,7 +211,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
     }
 
 
-    @command({ inhibitors: [requisites], description: "swap two people in the queue", aliases: ["qlock", "qshutoff"],  })
+    @command({ inhibitors: [requisites], description: "toggle joining the queue, put the gates up! or take them down", aliases: ["qlock", "qshutoff"],  })
     async qcutoff(msg: Message) {
         const evt = this.getEvent(msg);
         if (!msg.member) return;
@@ -214,7 +220,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
             evt.allowJoins = !evt.allowJoins;
             evt.disallowOnCycle = false;
             await msg.channel.send({
-                content: `:ok_hand: ${evt.allowJoins ? "joining the queue is now allowed! \`ep qjoin\`" : "joining the queue is now disallowed!"}`,
+                content: `${this.getLockEmoji(msg) || ":ok_hand:"} ${evt.allowJoins ? "joining the queue is now allowed! \`ep qjoin\`" : "joining the queue is now disallowed!"}`,
             })
         } else {
             await msg.channel.send(":warning: you aren't a mod!");
