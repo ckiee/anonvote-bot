@@ -85,11 +85,34 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         })
     }
 
+    private async canManage(msg: Message) {
+        let ret = false;
+        if (this.client.botAdmins.includes(msg.author.id)) ret = true;
+        if (msg.member?.permissions.has("MANAGE_MESSAGES")) ret = true;
+
+        if (!ret && msg.member?.roles?.cache.some(role => role.name == "Apprentice Teacher")) {
+            const CHECK = "✅";
+            const nmsg = await msg.reply(":eyes: hi there, apprentice! are you sure?");
+            await nmsg.react(CHECK);
+            const result = await nmsg.awaitReactions({
+                filter: (r, u) => u.id == msg.author.id && r.emoji.name == CHECK,
+                max: 1, time: 1000 * 60, errors: []
+            });
+            if (result.first()) {
+                await nmsg.edit("<:prommy_anonvote:1213676581826986044>");
+                ret = true;
+            }
+        }
+
+        if (ret) msg.react("🔐");
+        return ret;
+    }
+
     @command({ inhibitors: [requisites], description: "join the queue" })
     async qjoin(msg: Message, @optional user?: User) {
         const evt = this.getEvent(msg);
 
-        if (user && !(msg.member?.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id))) {
+        if (user && !(await this.canManage(msg))) {
             await msg.channel.send(":warning: you must be a mod to add other users to the queue!");
             return;
         }
@@ -125,7 +148,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
             return;
         }
 
-        if (user && !(msg.member.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id))) {
+        if (user && !(await this.canManage(msg))) {
             return await msg.channel.send(":warning: you must be a mod to kick people from the queue!");
         }
         const targetId = user?.id || msg.author.id;
@@ -143,7 +166,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
 
     @command({ inhibitors: [requisites], description: "clear the queue of all previous state", aliases: ["qflush"] })
     async qclear(msg: Message) {
-        if (!(msg.member?.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id))) {
+        if (!(await this.canManage(msg))) {
             return await msg.channel.send(":warning: you must be a mod to clear the queue!");
         }
 
@@ -175,7 +198,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
 
         if (count < 0) count = evt.queue.length - Math.min(Math.abs(count), evt.queue.length);
 
-        if (msg.member.permissions.has("MANAGE_MESSAGES") || msg.author.id == evt.currentUserId || this.client.botAdmins.includes(msg.author.id)) {
+        if (msg.author.id == evt.currentUserId || (await this.canManage(msg))) {
             // HACk this is a bit inelegant
             for (let i = 0; i < count; i++) {
                 evt.currentUserId = evt.queue[(this.indexOfUserId(evt.queue, evt.currentUserId!) + 1) % evt.queue.length].userId;
@@ -196,7 +219,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         const evt = this.getEvent(msg);
         if (!msg.member) return;
 
-        if (msg.member.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id)) {
+        if (await this.canManage(msg)) {
             const origTo: string = JSON.parse(JSON.stringify(evt.queue[toIdx].userId));
             evt.queue[toIdx].userId = evt.queue[fromIdx].userId;
             evt.queue[fromIdx].userId = origTo;
@@ -216,7 +239,7 @@ ${evt.queue.length == 0 ? "There's no one here yet.." : list}`
         const evt = this.getEvent(msg);
         if (!msg.member) return;
 
-        if (msg.member.permissions.has("MANAGE_MESSAGES") || this.client.botAdmins.includes(msg.author.id)) {
+        if (await this.canManage(msg)) {
             evt.allowJoins = !evt.allowJoins;
             evt.disallowOnCycle = false;
             await msg.channel.send({
