@@ -52,18 +52,12 @@ export default class RateModule extends Module {
             style: "DANGER"
         });
         if (state.state == "SETUP") {
+            const AMA = "1001207912036847616";
             return {
                 embeds: [{ title: `Welcome to ${this.client.user?.username}`, description: "Pick some options below!"}  ],
                 components: [
                     new MessageActionRow({
                         components: [
-                            // borked, unfortunately. TODO
-                            // new MessageButton({
-                            //     customId: "soundboard",
-                            //     style: state.soundboard ? "SUCCESS" : "DANGER",
-                            //     emoji: "🗣",
-                            //     label: "Soundboard",
-                            // }),
                             new MessageButton({
                                 customId: "showVotes",
                                 style: state.showVotes ? "SUCCESS" : "DANGER",
@@ -82,7 +76,12 @@ export default class RateModule extends Module {
                                 emoji: "💡",
                                 label: "Binary vote"
                             })
-                        ]
+                        ].concat(state.originatorId == AMA ? [new MessageButton({
+                            customId: "soundboard",
+                            style: state.soundboard ? "SUCCESS" : "DANGER",
+                            emoji: "🗣",
+                            label: "Soundboard (ama-only)",
+                        })] : [])
                     }),
 
                     new MessageActionRow({
